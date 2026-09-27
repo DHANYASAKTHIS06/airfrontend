@@ -1,0 +1,113 @@
+.notification-card-glass {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  position: relative;
+  transition: all var(--transition-normal);
+}
+
+.notification-card-glass.is-unread {
+  background: rgba(17, 28, 51, 0.95);
+  border-left: 3px solid var(--cyan-light);
+}
+
+.notification-card-glass.is-read {
+  opacity: 0.65;
+}
+
+.notif-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-icn-rose { color: #F87171; }
+.notif-icn-amber { color: #FBBF24; }
+.notif-icn-green { color: #34D399; }
+.notif-icn-cyan { color: #22D3EE; }
+
+.notif-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.notif-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.notif-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.notif-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.notif-loc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(6, 182, 212, 0.15);
+  color: var(--cyan-light);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.notif-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.notif-message {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.notif-actions-row {
+  margin-top: 0.25rem;
+}
+
+.btn-notif-action {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--cyan-light);
+}
+
+.btn-notif-action:hover {
+  text-decoration: underline;
+}
+
+.btn-notif-dismiss {
+  color: var(--text-dim);
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+
+.btn-notif-dismiss:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.08);
+}

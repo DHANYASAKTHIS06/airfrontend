@@ -1,0 +1,172 @@
+.pollution-map-glass-card {
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.map-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.map-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.map-pin-cyan {
+  color: var(--cyan-light);
+}
+
+.map-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.map-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.leg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-good { background: #10B981; }
+.dot-mod { background: #14B8A6; }
+.dot-poor { background: #F59E0B; }
+.dot-vpoor { background: #EF4444; }
+
+.leaflet-map-frame {
+  width: 100%;
+  height: 380px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  position: relative;
+  z-index: 1;
+}
+
+.leaflet-container-custom {
+  width: 100%;
+  height: 100%;
+  background: #080D1A !important;
+}
+
+/* Custom leaflet popup overrides */
+.leaflet-popup-content-wrapper {
+  background: #0B1325 !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+}
+
+.leaflet-popup-tip {
+  background: #0B1325 !important;
+}
+
+.map-popup-content {
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.popup-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.4rem;
+}
+
+.popup-name {
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.popup-cat-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #000;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.popup-aqi-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.popup-aqi-lbl {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.popup-aqi-val {
+  font-size: 1.1rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
+
+.popup-concern, .popup-rec {
+  display: flex;
+  flex-direction: column;
+}
+
+.p-lbl {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.p-txt {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.popup-inspect-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--cyan-light);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 0.25rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}

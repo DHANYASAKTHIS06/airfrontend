@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="aeroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4" />
+      <stop offset="50%" stop-color="#14B8A6" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <radialGradient id="radarGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#06B6D4" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <circle cx="50" cy="50" r="46" stroke="url(#aeroGrad)" stroke-width="2.5" stroke-dasharray="4 2" opacity="0.6"/>
+  <circle cx="50" cy="50" r="34" stroke="rgba(20, 184, 166, 0.4)" stroke-width="1.5" />
+  <circle cx="50" cy="50" r="20" fill="url(#radarGlow)" stroke="#06B6D4" stroke-width="2" />
+  <path d="M26 42 C 34 34, 46 34, 54 42 C 62 50, 74 50, 82 42" stroke="#22D3EE" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M18 52 C 28 44, 42 44, 52 52 C 62 60, 76 60, 84 52" stroke="#10B981" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M30 62 C 40 56, 50 56, 60 62 C 66 66, 72 66, 76 62" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <circle cx="50" cy="50" r="4.5" fill="#22D3EE" />
+  <path d="M50 50 L68 32" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+</svg>

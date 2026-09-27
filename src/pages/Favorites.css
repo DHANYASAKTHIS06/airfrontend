@@ -1,0 +1,100 @@
+.favorites-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.fav-card {
+  padding: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fav-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fav-loc-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fav-city-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.btn-fav-remove {
+  color: #F59E0B;
+  padding: 0.2rem;
+}
+
+.star-filled {
+  fill: #F59E0B;
+}
+
+.fav-aqi-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.fav-aqi-num {
+  font-size: 1.8rem;
+  font-weight: 900;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.fav-cat-tag {
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.fav-concern-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.fc-lbl {
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.fc-val {
+  color: var(--text-secondary);
+}
+
+.btn-fav-launch {
+  padding: 0.75rem;
+  font-weight: 700;
+  margin-top: auto;
+}
+
+.empty-favs-glass {
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+}
+
+.empty-star {
+  color: var(--text-dim);
+  opacity: 0.5;
+}

@@ -1,0 +1,152 @@
+.compare-inputs-card {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.compare-select-col {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.comp-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.input-loc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+}
+
+.comp-text-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+}
+
+.compare-vs-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyan-light);
+  font-weight: 800;
+  font-size: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+
+.btn-compare-submit {
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.comparison-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 860px) {
+  .comparison-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.comp-zone-card {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.comp-card-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.comp-side-tag {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--cyan-light);
+}
+
+.comp-city-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.comp-aqi-badge-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1.25rem;
+  width: fit-content;
+}
+
+.comp-aqi-num {
+  font-size: 2.2rem;
+  font-weight: 900;
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.comp-cat-label {
+  font-size: 1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.comp-field-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cf-lbl {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.cf-val {
+  font-size: 1.05rem;
+  color: #FFFFFF;
+}
+
+.cf-rec {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.comp-weather-row {
+  display: flex;
+  gap: 1.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}

@@ -1,0 +1,94 @@
+.air-chart-wrapper {
+  padding: 1.75rem;
+}
+
+.chart-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chart-title-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chart-header-icn {
+  color: var(--cyan-light);
+}
+
+.chart-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.chart-subheading {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.chart-range-picker {
+  display: flex;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
+.range-btn {
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.range-btn:hover {
+  color: #FFFFFF;
+}
+
+.range-btn.active {
+  background: rgba(6, 182, 212, 0.25);
+  color: var(--cyan-light);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.chart-tooltip-glass {
+  background: rgba(11, 19, 37, 0.95);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  backdrop-filter: blur(12px);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.tooltip-time {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.tooltip-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.tooltip-aqi-lbl {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.tooltip-aqi-num {
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+}
