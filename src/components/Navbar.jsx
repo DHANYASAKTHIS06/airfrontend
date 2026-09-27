@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Wind, Shield, BarChart3, History, User, LogIn, Menu, X, Activity } from 'lucide-react';
+import { Wind, Home, BarChart3, GitCompare, Bell, History, FileText, User, ShieldCheck, LogIn, LogOut, Menu, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
-export default function Navbar({ currentUser }) {
+export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const isActive = (path) => location.pathname === path;
-
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
   return (
@@ -23,7 +24,7 @@ export default function Navbar({ currentUser }) {
           </div>
           <div className="brand-text-block">
             <span className="brand-name">AERO-DETECTIVE</span>
-            <span className="brand-tagline">See What the Air Hides</span>
+            <span className="brand-tagline">Air Quality Classification & Mining</span>
           </div>
         </Link>
 
@@ -33,28 +34,39 @@ export default function Navbar({ currentUser }) {
             Home
           </Link>
           <Link to="/dashboard" className={`nav-link ${isActive('/dashboard') ? 'active' : ''}`}>
-            <BarChart3 size={17} />
-            <span>Dashboard</span>
+            Dashboard
           </Link>
-          <Link to="/analyze/Coimbatore" className={`nav-link ${location.pathname.startsWith('/analyze') ? 'active' : ''}`}>
-            <Activity size={17} />
-            <span>Analysis</span>
+          <Link to="/compare" className={`nav-link ${isActive('/compare') ? 'active' : ''}`}>
+            Search & Compare
+          </Link>
+          <Link to="/notifications" className={`nav-link ${isActive('/notifications') ? 'active' : ''}`}>
+            Alerts
           </Link>
           <Link to="/history" className={`nav-link ${isActive('/history') ? 'active' : ''}`}>
-            <History size={17} />
-            <span>History</span>
+            History
+          </Link>
+          <Link to="/reports" className={`nav-link ${isActive('/reports') ? 'active' : ''}`}>
+            Reports
+          </Link>
+          <Link to="/admin-support" className={`nav-link ${isActive('/admin-support') ? 'active' : ''}`}>
+            Admin & Support
           </Link>
         </nav>
 
         {/* User / CTA actions */}
         <div className="navbar-actions">
-          {currentUser ? (
-            <Link to="/profile" className={`profile-pill ${isActive('/profile') ? 'active' : ''}`}>
-              <div className="user-avatar">
-                {currentUser.name ? currentUser.name.charAt(0) : 'U'}
-              </div>
-              <span className="user-name-label">{currentUser.name.split(' ')[0]}</span>
-            </Link>
+          {user ? (
+            <div className="navbar-user-group">
+              <Link to="/profile" className={`profile-pill ${isActive('/profile') ? 'active' : ''}`}>
+                <div className="user-avatar">
+                  {user.name ? user.name.charAt(0) : 'U'}
+                </div>
+                <span className="user-name-label">{user.name.split(' ')[0]}</span>
+              </Link>
+              <button className="btn-nav-logout" onClick={logout} title="Sign Out">
+                <LogOut size={16} />
+              </button>
+            </div>
           ) : (
             <div className="auth-buttons">
               <Link to="/login" className="btn-login">
@@ -85,29 +97,32 @@ export default function Navbar({ currentUser }) {
             Home
           </Link>
           <Link to="/dashboard" className={`mobile-nav-link ${isActive('/dashboard') ? 'active' : ''}`} onClick={closeMobileMenu}>
-            <BarChart3 size={18} />
             Dashboard
           </Link>
-          <Link to="/analyze/Coimbatore" className={`mobile-nav-link ${location.pathname.startsWith('/analyze') ? 'active' : ''}`} onClick={closeMobileMenu}>
-            <Activity size={18} />
-            Air Analysis
+          <Link to="/compare" className={`mobile-nav-link ${isActive('/compare') ? 'active' : ''}`} onClick={closeMobileMenu}>
+            Search & Compare
+          </Link>
+          <Link to="/notifications" className={`mobile-nav-link ${isActive('/notifications') ? 'active' : ''}`} onClick={closeMobileMenu}>
+            Alerts
           </Link>
           <Link to="/history" className={`mobile-nav-link ${isActive('/history') ? 'active' : ''}`} onClick={closeMobileMenu}>
-            <History size={18} />
-            History
+            History & Favorites
           </Link>
-          <Link to="/profile" className={`mobile-nav-link ${isActive('/profile') ? 'active' : ''}`} onClick={closeMobileMenu}>
-            <User size={18} />
-            Profile & Settings
+          <Link to="/reports" className={`mobile-nav-link ${isActive('/reports') ? 'active' : ''}`} onClick={closeMobileMenu}>
+            Report Generation
           </Link>
-          <div className="mobile-nav-auth">
-            <Link to="/login" className="btn-secondary w-full" onClick={closeMobileMenu}>
-              Log In
+          <Link to="/admin-support" className={`mobile-nav-link ${isActive('/admin-support') ? 'active' : ''}`} onClick={closeMobileMenu}>
+            Admin & Support
+          </Link>
+          {user ? (
+            <Link to="/profile" className={`mobile-nav-link ${isActive('/profile') ? 'active' : ''}`} onClick={closeMobileMenu}>
+              Profile ({user.name})
             </Link>
-            <Link to="/register" className="btn-primary w-full" onClick={closeMobileMenu}>
-              Get Started
+          ) : (
+            <Link to="/login" className="mobile-nav-link" onClick={closeMobileMenu}>
+              Log In / Register
             </Link>
-          </div>
+          )}
         </div>
       )}
     </header>

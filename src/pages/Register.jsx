@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Wind, Mail, Lock, User, UserPlus, ArrowRight } from 'lucide-react';
+import { Wind, Mail, Lock, User, UserPlus, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AnimatedBackground from '../components/AnimatedBackground';
 import './AuthPages.css';
@@ -8,17 +8,19 @@ import './AuthPages.css';
 export default function Register() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [role, setRole] = useState('Environmental Analyst');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all registration fields.');
+      setError('Please fill in all required registration fields.');
       return;
     }
 
@@ -36,7 +38,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      await register(name, email, password, role);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
@@ -57,11 +59,16 @@ export default function Register() {
           </div>
           <h1 className="auth-title">Create Account</h1>
           <p className="auth-subtitle">
-            Join the AERO-DETECTIVE environmental classification network
+            Join the air quality monitoring and pattern mining platform
           </p>
         </div>
 
-        {error && <div className="auth-error-alert">{error}</div>}
+        {error && (
+          <div className="auth-error-alert">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleRegister} className="auth-form">
@@ -96,13 +103,30 @@ export default function Register() {
           </div>
 
           <div className="form-group">
+            <label className="form-label">Role / Designation</label>
+            <div className="input-with-icon">
+              <ShieldCheck size={18} className="input-field-icon" />
+              <select
+                className="form-input"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="Environmental Analyst">Environmental Analyst</option>
+                <option value="Station Field Officer">Station Field Officer</option>
+                <option value="Research Scholar">Research Scholar</option>
+                <option value="Administrator">System Administrator</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-group">
             <label className="form-label">Password</label>
             <div className="input-with-icon">
               <Lock size={18} className="input-field-icon" />
               <input
                 type="password"
                 className="form-input"
-                placeholder="At least 6 characters"
+                placeholder="Minimum 6 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -141,11 +165,12 @@ export default function Register() {
           </button>
         </form>
 
-        {/* Login Link */}
-        <div className="auth-footer-link">
-          <span>Already have an account?</span>
+        {/* Footer */}
+        <div className="auth-card-footer">
+          <span>Already registered?</span>
           <Link to="/login" className="auth-switch-link">
-            Log In
+            <span>Sign In</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
       </div>

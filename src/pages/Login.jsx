@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Wind, Mail, Lock, LogIn, Shield, ArrowRight } from 'lucide-react';
+import { Wind, Mail, Lock, LogIn, Shield, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import AnimatedBackground from '../components/AnimatedBackground';
 import './AuthPages.css';
@@ -10,6 +10,10 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [forgotModal, setForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSent, setForgotSent] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -32,9 +36,15 @@ export default function Login() {
     }
   };
 
-  const handleDemoFill = () => {
-    setEmail('alex.mitchell@aerodetective.org');
-    setPassword('sentinel-2026');
+  const handleForgotSubmit = (e) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotSent(true);
+    setTimeout(() => {
+      setForgotSent(false);
+      setForgotModal(false);
+      setForgotEmail('');
+    }, 2500);
   };
 
   return (
@@ -47,13 +57,18 @@ export default function Login() {
           <div className="auth-icon-wrap">
             <Wind size={26} className="auth-brand-icn" />
           </div>
-          <h1 className="auth-title">Welcome Back</h1>
+          <h1 className="auth-title">Account Login</h1>
           <p className="auth-subtitle">
-            Continue your analytical journey with AERO-DETECTIVE
+            Sign in to access environmental telemetry & ML air quality insights
           </p>
         </div>
 
-        {error && <div className="auth-error-alert">{error}</div>}
+        {error && (
+          <div className="auth-error-alert">
+            <AlertCircle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleLogin} className="auth-form">
@@ -75,9 +90,13 @@ export default function Login() {
           <div className="form-group">
             <div className="label-flex-row">
               <label className="form-label">Password</label>
-              <a href="#forgot" className="forgot-pass-link" onClick={(e) => { e.preventDefault(); alert("Demo password recovery link sent."); }}>
+              <button
+                type="button"
+                className="forgot-pass-btn"
+                onClick={() => setForgotModal(true)}
+              >
                 Forgot Password?
-              </a>
+              </button>
             </div>
             <div className="input-with-icon">
               <Lock size={18} className="input-field-icon" />
@@ -102,31 +121,62 @@ export default function Login() {
             ) : (
               <>
                 <LogIn size={18} />
-                <span>Sign In to System</span>
+                <span>Sign In to Platform</span>
               </>
             )}
           </button>
         </form>
 
-        {/* Demo credentials quick fill */}
-        <div className="demo-credentials-box">
-          <div className="demo-top">
-            <Shield size={14} className="demo-shield" />
-            <span>Quick Demo Credentials</span>
-          </div>
-          <button type="button" className="btn-demo-fill" onClick={handleDemoFill}>
-            Auto-fill Analyst Credentials
-          </button>
-        </div>
-
-        {/* Register Footer Link */}
-        <div className="auth-footer-link">
-          <span>Don't have an account?</span>
+        {/* Footer */}
+        <div className="auth-card-footer">
+          <span>Don't have an analyst account?</span>
           <Link to="/register" className="auth-switch-link">
-            Create an Account
+            <span>Register Account</span>
+            <ArrowRight size={14} />
           </Link>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {forgotModal && (
+        <div className="modal-backdrop">
+          <div className="modal-card glass-card">
+            <h3 className="modal-title">Reset Password</h3>
+            <p className="modal-desc">
+              Enter your registered email address to receive password recovery instructions.
+            </p>
+
+            {forgotSent ? (
+              <div className="success-alert">
+                <CheckCircle2 size={18} />
+                <span>Password reset link sent to your email.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotSubmit}>
+                <div className="form-group mb-1">
+                  <label className="form-label">Email Address</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="Enter your email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="modal-actions-row">
+                  <button type="button" className="btn-secondary" onClick={() => setForgotModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    Send Reset Link
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

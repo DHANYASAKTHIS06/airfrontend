@@ -7,33 +7,50 @@ import {
   Star, 
   AlertTriangle, 
   ArrowUpRight,
-  RefreshCw
+  RefreshCw,
+  Cpu,
+  GitCompare,
+  FileText,
+  Bell
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import AQIRing from '../components/AQIRing';
 import InsightCard from '../components/InsightCard';
 import AirQualityChart from '../components/AirQualityChart';
 import PollutionMap from '../components/PollutionMap';
-import AdvancedAnalysisModal from '../components/AdvancedAnalysisModal';
+import PollutionCard from '../components/PollutionCard';
 import LoadingAnimation from '../components/LoadingScreen';
 import { useLocationContext } from '../context/LocationContext';
-import { MONITORED_LOCATIONS } from '../services/airQualityService';
+import { useAuth } from '../context/AuthContext';
+import { findSupportedLocation, SUPPORTED_LOCATIONS } from '../data/supportedLocations';
 import './Dashboard.css';
 
 export default function Dashboard() {
-  const { selectedLocation, airData, loading, error, selectLocation, toggleFavorite, isFavorite, refetch } = useLocationContext();
+  const { selectedLocation, airData, loading, error, selectLocation, toggleFavorite, isFavorite, refetch, history } = useLocationContext();
+  const { user } = useAuth();
   const [searchInput, setSearchInput] = useState('');
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchError, setSearchError] = useState('');
+  const navigate = useNavigate();
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      selectLocation(searchInput.trim());
-      setSearchInput('');
+    const query = searchInput.trim();
+    if (!query) return;
+
+    const match = findSupportedLocation(query);
+    if (!match) {
+      setSearchError('Location Not Found.');
+      return;
     }
+
+    setSearchError('');
+    selectLocation(match.name);
+    setSearchInput('');
   };
 
-  const hubLocations = Object.values(MONITORED_LOCATIONS);
+  const hubLocations = ['Coimbatore', 'Delhi', 'Bengaluru', 'Mumbai', 'Chennai', 'Shimla', 'Jaipur', 'Kolkata']
+    .map(name => findSupportedLocation(name))
+    .filter(Boolean);
 
   return (
     <div className="dashboard-layout-root">
@@ -43,8 +60,10 @@ export default function Dashboard() {
         {/* Dashboard Top Header */}
         <header className="dash-header-bar">
           <div className="dash-greeting-block">
-            <span className="dash-kicker">ATMOSPHERIC INTELLIGENCE PLATFORM</span>
-            <h1 className="dash-headline">Good Day, Analyst</h1>
+            <span className="dash-kicker">ATMOSPHERIC INTELLIGENCE DASHBOARD</span>
+            <h1 className="dash-headline">
+              Welcome, {user?.name ? user.name.split(' ')[0] : 'Analyst'}
+            </h1>
           </div>
 
           {/* Location Selector & Quick Search */}
@@ -54,12 +73,18 @@ export default function Dashboard() {
               <input
                 type="text"
                 className="dash-search-input"
-                placeholder="Switch monitored location..."
+                placeholder="Search supported location..."
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => {
+                  setSearchInput(e.target.value);
+                  if (searchError) setSearchError('');
+                }}
               />
               <button type="submit" className="btn-dash-search">Search</button>
             </form>
+            {searchError && (
+              <span className="dash-search-error">{searchError}</span>
+            )}
           </div>
         </header>
 
@@ -71,13 +96,36 @@ export default function Dashboard() {
               <div
                 key={hub.name}
                 className={`dash-hub-pill ${isActive ? 'active' : ''}`}
-                onClick={() => selectLocation(hub.name)}
+                onClick={() => {
+                  setSearchError('');
+                  selectLocation(hub.name);
+                }}
               >
                 <span className="hub-dot" style={{ backgroundColor: "#14B8A6" }}></span>
                 <span className="hub-name">{hub.name}</span>
               </div>
             );
           })}
+        </div>
+
+        {/* Quick Actions Strip */}
+        <div className="dash-quick-actions-bar">
+          <Link to="/compare" className="dash-quick-btn">
+            <GitCompare size={16} />
+            <span>Compare Stations</span>
+          </Link>
+          <Link to="/reports" className="dash-quick-btn">
+            <FileText size={16} />
+            <span>Generate Report</span>
+          </Link>
+          <Link to="/notifications" className="dash-quick-btn">
+            <Bell size={16} />
+            <span>Alerts & Notifications</span>
+          </Link>
+          <Link to="/history" className="dash-quick-btn">
+            <Star size={16} />
+            <span>History & Favorites</span>
+          </Link>
         </div>
 
         {/* Loading State */}
@@ -87,22 +135,28 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Error State with Retry Button */}
+        {/* Error State */}
         {error && !loading && (
           <div className="glass-card" style={{ padding: '30px', margin: '20px 0', borderColor: '#EF4444' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#EF4444', marginBottom: '10px' }}>
               <AlertTriangle size={24} />
-              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>Backend Connection Error</h3>
+              <h3 style={{ margin: 0, fontSize: '1.2rem' }}>
+                {error.includes('Location Not Found') ? 'Location Not Found.' : 'Unable to fetch data'}
+              </h3>
             </div>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>{error}</p>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>
+              {error.includes('Location Not Found') 
+                ? 'The requested location is not in the supported monitoring station dataset.' 
+                : 'Unable to communicate with the deployed Render backend ML service.'}
+            </p>
             <button className="btn-primary" onClick={refetch}>
               <RefreshCw size={16} />
-              <span>Retry Backend Request</span>
+              <span>Retry Request</span>
             </button>
           </div>
         )}
 
-        {/* Primary Air Quality Card */}
+        {/* Primary Real ML Air Quality Showcase */}
         {airData && !loading && !error && (
           <>
             <div className="dash-primary-showcase glass-card">
@@ -119,27 +173,27 @@ export default function Dashboard() {
                       <Star size={18} />
                     </button>
                   </div>
-                  <span className="showcase-region-tag">{airData.region || airData.country}</span>
+                  <span className="showcase-region-tag">{airData.region}, {airData.country}</span>
                 </div>
 
                 <div className="showcase-category-block">
-                  <span className="showcase-sub-label">CURRENT AIR QUALITY (RELIABLE BACKEND ML)</span>
+                  <span className="showcase-sub-label">BACKEND ML CLASSIFICATION</span>
                   <span className="showcase-cat-name" style={{ color: airData.categoryColor }}>
                     {airData.category.toUpperCase()}
                   </span>
-                  <p className="showcase-brief-desc">{airData.shortAdvice || "Air quality requires general attention."}</p>
+                  <p className="showcase-brief-desc">{airData.shortAdvice}</p>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="showcase-action-btns">
                   <Link to={`/air-quality/${encodeURIComponent(airData.name)}`} className="btn-primary">
-                    <span>View Detailed Analysis</span>
+                    <span>Deep-Dive Analysis</span>
                     <ArrowUpRight size={17} />
                   </Link>
-                  <button className="btn-secondary" onClick={() => setShowAdvanced(true)}>
-                    <Sliders size={16} />
-                    <span>Advanced ML Insights</span>
-                  </button>
+                  <Link to={`/compare?cityA=${encodeURIComponent(airData.name)}`} className="btn-secondary">
+                    <GitCompare size={16} />
+                    <span>Compare Station</span>
+                  </Link>
                 </div>
               </div>
 
@@ -154,16 +208,16 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Smart Actionable Recommendation */}
+            {/* Smart Actionable Recommendation Banner */}
             <div className="dash-insights-section">
               <div className="smart-rec-banner glass-card">
                 <div className="rec-header-row">
                   <div className="rec-title-group">
                     <AlertTriangle size={20} style={{ color: airData.categoryColor }} />
-                    <h3 className="rec-title">LIVE BACKEND ML RECOMMENDATION</h3>
+                    <h3 className="rec-title">DEPLOYED ML RECOMMENDATION & METRICS</h3>
                   </div>
                   <span className="badge" style={{ backgroundColor: `${airData.categoryColor}20`, color: airData.categoryColor }}>
-                    {airData.category} Alert
+                    {airData.category} Rating
                   </span>
                 </div>
 
@@ -172,9 +226,9 @@ export default function Dashboard() {
                 </p>
 
                 <div className="rec-why-box">
-                  <span className="why-title">ML Pipeline Diagnostic:</span>
+                  <span className="why-title">ML Pipeline Diagnostics:</span>
                   <span className="why-text">
-                    Classification Rating: {airData.backendML?.airQuality} | ML Confidence: {airData.backendML?.confidence}% | Regression Score: {airData.backendML?.pollutionScore} | PCA PC1: {airData.backendML?.featureExtraction?.PC1}
+                    ML Classification: {airData.backendML?.airQuality} | Confidence: {airData.backendML?.confidence}% | Regression Score: {airData.backendML?.pollutionScore} | Pattern Index: #{airData.backendML?.pollutionPattern} | PCA PC1: {airData.backendML?.featureExtraction?.PC1}
                   </span>
                 </div>
               </div>
@@ -182,71 +236,32 @@ export default function Dashboard() {
               <InsightCard data={airData} />
             </div>
 
-            {/* Charts & Interactive Maps */}
-            <div className="dash-charts-grid">
-              <AirQualityChart data={airData} />
+            {/* Monitored Pollutant Matrix */}
+            <div className="mb-2">
+              <PollutionCard pollutants={airData.pollutants} />
+            </div>
+
+            {/* Geospatial Map */}
+            <div className="mb-2">
               <PollutionMap selectedLocation={selectedLocation} />
             </div>
 
-            {/* Advanced ML Modal */}
-            <AdvancedAnalysisModal
-              isOpen={showAdvanced}
-              onClose={() => setShowAdvanced(false)}
-              data={{
-                ...airData,
-                mlAnalysis: {
-                  randomForest: {
-                    modelName: "Backend Classification Model (Render Deployed)",
-                    predictedClass: airData.backendML?.airQuality || airData.category,
-                    accuracyConfidence: airData.backendML?.confidence || 100.0,
-                    treeVotes: { Good: airData.category === 'Good' ? 95 : 2, Moderate: airData.category === 'Moderate' ? 90 : 5, Poor: airData.category === 'Poor' ? 88 : 8, "Very Poor": airData.category === 'Very Poor' ? 96 : 2 },
-                    featureImportances: [
-                      { feature: "Fine Particulate (PM2.5)", weight: 42 },
-                      { feature: "Coarse Dust (RSPM)", weight: 26 },
-                      { feature: "Vehicular NO2", weight: 16 },
-                      { feature: "Sulfur Dioxide (SO2)", weight: 11 },
-                      { feature: "Suspended Particulates", weight: 5 }
-                    ],
-                    summary: `Deployed classification model evaluated air quality as ${airData.backendML?.airQuality} with ${airData.backendML?.confidence}% confidence rating.`
-                  },
-                  kMeans: {
-                    modelName: "Backend Pattern & Regression Model",
-                    clusterId: `Pattern Index #${airData.backendML?.pollutionPattern}`,
-                    clusterColor: airData.categoryColor,
-                    distanceToCentroid: airData.backendML?.pollutionScore || 0,
-                    clusterCharacteristics: `Regression Pollution Score: ${airData.backendML?.pollutionScore}.`,
-                    clusterMembers: [airData.name],
-                    centroidsComparison: [
-                      { metric: "PM2.5", clusterValue: airData.rawPayload?.pm2_5 || 0, globalAverage: 30 },
-                      { metric: "NO2", clusterValue: airData.rawPayload?.no2 || 0, globalAverage: 20 },
-                      { metric: "RSPM", clusterValue: airData.rawPayload?.rspm || 0, globalAverage: 60 }
-                    ]
-                  },
-                  apriori: {
-                    modelName: "Backend Pattern Association",
-                    minSupport: 0.35,
-                    minConfidence: 0.82,
-                    frequentItemsets: [`{PM2.5: ${airData.rawPayload?.pm2_5}, NO2: ${airData.rawPayload?.no2}}`],
-                    associationRules: [
-                      { antecedent: `PM2.5 = ${airData.rawPayload?.pm2_5} µg/m³`, consequent: `Classification = ${airData.category}`, support: "44%", confidence: `${airData.backendML?.confidence}%`, lift: "2.34" }
-                    ],
-                    patternDiscovery: `Pattern matching model grouped telemetry under pattern #${airData.backendML?.pollutionPattern}.`
-                  },
-                  pca: {
-                    modelName: "Principal Component Analysis (PCA)",
-                    totalVarianceExplained: "94.2%",
-                    components: [
-                      { name: "PC1 (Principal Dimension 1)", variance: "58.4%", keyDrivers: `PC1 Value: ${airData.backendML?.featureExtraction?.PC1}` },
-                      { name: "PC2 (Principal Dimension 2)", variance: "24.6%", keyDrivers: `PC2 Value: ${airData.backendML?.featureExtraction?.PC2}` }
-                    ],
-                    coordinates: { pc1: airData.backendML?.featureExtraction?.PC1 || 0, pc2: airData.backendML?.featureExtraction?.PC2 || 0 },
-                    scatterPoints: [
-                      { name: airData.name, x: airData.backendML?.featureExtraction?.PC1 || 0, y: airData.backendML?.featureExtraction?.PC2 || 0, active: true }
-                    ]
-                  }
-                }
-              }}
-            />
+            {/* Recent Activities Ledger */}
+            {history && history.length > 0 && (
+              <div className="glass-card dash-recent-activities-card">
+                <h3 className="section-card-title">Recent Monitored Activities</h3>
+                <div className="dash-activity-list">
+                  {history.slice(0, 5).map((act, i) => (
+                    <div key={i} className="dash-activity-item" onClick={() => selectLocation(act.location)}>
+                      <MapPin size={16} className="pin-cyan" />
+                      <span className="activity-loc">{act.location}</span>
+                      <span className="activity-cat" style={{ color: act.categoryColor }}>{act.category} (AQI {act.aqi})</span>
+                      <span className="activity-time">{new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

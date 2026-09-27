@@ -1,44 +1,49 @@
 import apiClient from './api';
-import { MONITORED_LOCATIONS } from './airQualityService';
+import { SUPPORTED_LOCATIONS } from '../data/supportedLocations';
+import { getCategoryMeta } from './airQualityService';
 
 export const clusteringService = {
-  // Queries Render backend ML endpoints for monitored locations to construct real K-Means / PCA spatial clusters
+  // Queries Render backend ML endpoints for supported network locations
   getClustersData: async () => {
-    const locations = Object.values(MONITORED_LOCATIONS);
+    const targetLocations = ['coimbatore', 'delhi', 'bengaluru', 'mumbai', 'chennai', 'shimla', 'jaipur', 'kolkata'];
+    const locations = targetLocations.map(k => SUPPORTED_LOCATIONS[k]).filter(Boolean);
 
-    // Call /predict endpoint for all locations to retrieve real PCA coordinates and ML classifications
     const results = await Promise.all(
       locations.map(async (loc) => {
         try {
-          const res = await apiClient.post('/predict', loc.rawPayload);
+          const payload = {
+            so2: loc.so2,
+            no2: loc.no2,
+            rspm: loc.rspm,
+            spm: loc.spm,
+            pm2_5: loc.pm2_5
+          };
+          const res = await apiClient.post('/predict', payload);
           return {
             name: loc.name,
             pc1: res.feature_extraction?.PC1 ?? 0,
             pc2: res.feature_extraction?.PC2 ?? 0,
             pattern: res.pollution_pattern ?? 0,
             score: res.pollution_score ?? 0,
-            category: res.air_quality || "Good",
-            recommendation: res.recommendations?.[0] || "Air quality satisfactory."
+            category: res.air_quality || "Unknown",
+            categoryColor: getCategoryMeta(res.air_quality).categoryColor,
+            recommendation: res.recommendations?.[0] || "Air quality processed."
           };
         } catch (e) {
           console.error(`Error querying backend for ${loc.name}:`, e);
-          return {
-            name: loc.name,
-            pc1: 0,
-            pc2: 0,
-            pattern: 0,
-            score: 0,
-            category: "Good",
-            recommendation: "Air quality telemetry unavailable."
-          };
+          return null;
         }
       })
     );
 
-    // Group locations into real cluster groups based on backend pollution patterns and PCA axes
-    const lowRiskLocations = results.filter(r => r.pc1 < 0).map(r => r.name);
-    const moderateLocations = results.filter(r => r.pc1 >= 0 && r.pc1 < 5).map(r => r.name);
-    const highRiskLocations = results.filter(r => r.pc1 >= 5).map(r => r.name);
+    const validResults = results.filter(Boolean);
+    if (validResults.length === 0) {
+      throw new Error('Unable to fetch data');
+    }
+
+    const lowRiskLocations = validResults.filter(r => r.pc1 < 0).map(r => r.name);
+    const moderateLocations = validResults.filter(r => r.pc1 >= 0 && r.pc1 < 5).map(r => r.name);
+    const highRiskLocations = validResults.filter(r => r.pc1 >= 5).map(r => r.name);
 
     return {
       k: 3,
@@ -46,33 +51,33 @@ export const clusteringService = {
       clusters: [
         {
           id: 1,
-          name: "Alpine & Low Particulate Dispersion Zone",
+          name: "Low Particulate & Clean Baseline Zone",
           label: "LOW POLLUTION CLUSTER",
           color: "#10B981",
-          characteristics: "Clean air baseline characterized by negative PC1 principal values and high convective ventilation.",
+          characteristics: "Locations with negative PC1 coordinates characterized by low particulate concentrations.",
           sampleLocations: lowRiskLocations.length > 0 ? lowRiskLocations : ["Shimla", "Bengaluru"],
-          recommendation: "Pristine environment. Safe for all outdoor activities."
+          recommendation: "Safe conditions for outdoor activities."
         },
         {
           id: 2,
           name: "Moderate Urban Emission Zone",
           label: "MODERATE POLLUTION CLUSTER",
           color: "#14B8A6",
-          characteristics: "Moderate urban traffic emissions with balanced PC1/PC2 feature coordinates.",
-          sampleLocations: moderateLocations.length > 0 ? moderateLocations : ["Chennai", "Mumbai", "Coimbatore"],
-          recommendation: "Safe for general population. Observe standard urban caution."
+          characteristics: "Urban centers exhibiting moderate traffic-related particulate concentrations.",
+          sampleLocations: moderateLocations.length > 0 ? moderateLocations : ["Chennai", "Coimbatore", "Mumbai"],
+          recommendation: "Safe for general activities with standard urban awareness."
         },
         {
           id: 3,
-          name: "High Particulate & Stagnant Basin",
+          name: "Elevated Particulate Basin",
           label: "HIGH POLLUTION CLUSTER",
           color: "#EF4444",
-          characteristics: "Severe thermal inversion and elevated PC1 principal particulate component loading.",
+          characteristics: "Stations with high positive PC1 values and significant particulate loading.",
           sampleLocations: highRiskLocations.length > 0 ? highRiskLocations : ["Delhi"],
-          recommendation: "Elevated risk. Sensitive groups limit outdoor physical exertion."
+          recommendation: "Elevated particulate concentration. Sensitive groups limit prolonged outdoor exposure."
         }
       ],
-      dataPoints: results.map((r) => ({
+      dataPoints: validResults.map((r) => ({
         name: r.name,
         x: parseFloat(r.pc1.toFixed(2)),
         y: parseFloat(r.pc2.toFixed(2)),

@@ -1,6 +1,54 @@
-// AERO-DETECTIVE Authentication Service (Mock / Client-side persistence)
+// Authentication & User State Service
 
 const AUTH_USER_KEY = "aero_detective_user";
+const REGISTERED_USERS_KEY = "aero_registered_users";
+
+// Default admin and initial users storage
+const INITIAL_USERS = [
+  {
+    id: "u_admin",
+    name: "Admin Officer",
+    email: "admin@aerodetective.org",
+    password: "admin",
+    role: "Administrator",
+    organization: "Central Pollution Control Center",
+    joinedDate: "January 2024",
+    status: "Active",
+    preferences: {
+      alertThreshold: 120,
+      enableRealtimeAlerts: true,
+      detailedMLMode: true,
+      units: "standard"
+    }
+  },
+  {
+    id: "u_analyst",
+    name: "Dr. Alex Mitchell",
+    email: "alex.mitchell@aerodetective.org",
+    password: "password123",
+    role: "Environmental Analyst",
+    organization: "Atmospheric Pattern Lab",
+    joinedDate: "September 2024",
+    status: "Active",
+    preferences: {
+      alertThreshold: 150,
+      enableRealtimeAlerts: true,
+      detailedMLMode: true,
+      units: "standard"
+    }
+  }
+];
+
+function getStoredUsers() {
+  try {
+    const raw = localStorage.getItem(REGISTERED_USERS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.error(e);
+  }
+  localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(INITIAL_USERS));
+  return INITIAL_USERS;
+}
 
 export const AuthService = {
   // Get current logged-in user or guest
@@ -13,32 +61,33 @@ export const AuthService = {
     } catch (e) {
       console.error("Error reading auth state", e);
     }
-    // Default demo user
-    return {
-      name: "Dr. Alex Mitchell",
-      email: "alex.mitchell@aerodetective.org",
-      role: "Environmental Analyst",
-      organization: "Atmospheric Pattern Lab",
-      joinedDate: "October 2024",
-      savedLocations: ["Coimbatore", "Bengaluru", "Shimla"],
-      preferences: {
-        alertThreshold: 150,
-        enableRealtimeAlerts: true,
-        detailedMLMode: true,
-        units: "standard"
-      }
-    };
+    return null;
+  },
+
+  getAllUsers: () => {
+    return getStoredUsers();
   },
 
   login: async (email, password) => {
-    await new Promise((res) => setTimeout(res, 400));
-    const user = {
+    const users = getStoredUsers();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const match = users.find(u => u.email.toLowerCase() === cleanEmail && u.password === password);
+
+    if (match) {
+      const { password: _, ...safeUser } = match;
+      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(safeUser));
+      return { success: true, user: safeUser };
+    }
+
+    // Allow user login with clean fallback account creation if not yet registered
+    const newUser = {
+      id: `u_${Date.now()}`,
       name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, l => l.toUpperCase()),
-      email,
-      role: "Environmental Analyst",
-      organization: "Atmospheric Pattern Lab",
-      joinedDate: "September 2026",
-      savedLocations: ["Coimbatore", "Delhi", "Bengaluru"],
+      email: cleanEmail,
+      role: cleanEmail.includes("admin") ? "Administrator" : "Environmental Analyst",
+      organization: "Atmospheric Monitoring Cell",
+      joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
+      status: "Active",
       preferences: {
         alertThreshold: 150,
         enableRealtimeAlerts: true,
@@ -46,19 +95,30 @@ export const AuthService = {
         units: "standard"
       }
     };
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    return { success: true, user };
+    
+    users.push({ ...newUser, password });
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(newUser));
+    return { success: true, user: newUser };
   },
 
-  register: async (name, email, password) => {
-    await new Promise((res) => setTimeout(res, 400));
-    const user = {
+  register: async (name, email, password, role = "Environmental Analyst") => {
+    const users = getStoredUsers();
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const existing = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+    if (existing) {
+      throw new Error("An account with this email address already exists.");
+    }
+
+    const newUser = {
+      id: `u_${Date.now()}`,
       name,
-      email,
-      role: "Environmental Analyst",
-      organization: "Global Air Sentinel",
+      email: cleanEmail,
+      role: role || (cleanEmail.includes("admin") ? "Administrator" : "Environmental Analyst"),
+      organization: "Air Quality Sentinel",
       joinedDate: new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-      savedLocations: ["Coimbatore"],
+      status: "Active",
       preferences: {
         alertThreshold: 100,
         enableRealtimeAlerts: true,
@@ -66,15 +126,41 @@ export const AuthService = {
         units: "standard"
       }
     };
-    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    return { success: true, user };
+
+    users.push({ ...newUser, password });
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(newUser));
+    return { success: true, user: newUser };
   },
 
   updateProfile: (updatedData) => {
     const current = AuthService.getCurrentUser();
+    if (!current) return null;
+    
     const updated = { ...current, ...updatedData };
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
+
+    // Update in users registry
+    const users = getStoredUsers().map(u => u.email === current.email ? { ...u, ...updatedData } : u);
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
     return updated;
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    const current = AuthService.getCurrentUser();
+    if (!current) throw new Error("No active session.");
+
+    const users = getStoredUsers();
+    const userIndex = users.findIndex(u => u.email === current.email);
+    if (userIndex === -1) throw new Error("User record not found.");
+
+    if (users[userIndex].password && users[userIndex].password !== currentPassword) {
+      throw new Error("Incorrect current password.");
+    }
+
+    users[userIndex].password = newPassword;
+    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    return { success: true };
   },
 
   logout: () => {

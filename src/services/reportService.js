@@ -1,13 +1,33 @@
 import apiClient from './api';
-import { MONITORED_LOCATIONS } from './airQualityService';
+import { findSupportedLocation } from '../data/supportedLocations';
 
 export const reportService = {
   // Generates executive environmental intelligence summary powered by Render backend ML models
   generateExecutiveReport: async ({ location, dateRange, analysisType }) => {
-    const key = (location || 'Coimbatore').trim().toLowerCase();
-    const loc = MONITORED_LOCATIONS[key] || MONITORED_LOCATIONS.coimbatore;
+    const loc = findSupportedLocation(location);
+    
+    if (!loc) {
+      throw new Error('Location Not Found.');
+    }
 
-    const backendResult = await apiClient.post('/predict', loc.rawPayload);
+    const payload = {
+      so2: loc.so2,
+      no2: loc.no2,
+      rspm: loc.rspm,
+      spm: loc.spm,
+      pm2_5: loc.pm2_5
+    };
+
+    let backendResult;
+    try {
+      backendResult = await apiClient.post('/predict', payload);
+    } catch (err) {
+      throw new Error('Unable to fetch data');
+    }
+
+    if (!backendResult || backendResult.success === false) {
+      throw new Error('Unable to fetch data');
+    }
 
     const {
       air_quality,
@@ -15,7 +35,7 @@ export const reportService = {
       pollution_pattern,
       pollution_score,
       recommendations
-    } = backendResult || {};
+    } = backendResult;
 
     const dateStr = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
     const reportId = `AERO-REP-${Date.now().toString().slice(-6)}`;
@@ -26,16 +46,17 @@ export const reportService = {
     return {
       reportId,
       location: loc.name,
+      state: loc.state,
       dateRange,
       analysisType,
       generatedAt: dateStr,
-      executiveSummary: `Atmospheric telemetry evaluation for ${loc.name.toUpperCase()} over ${dateRange}. Deployed ML models on Render backend classified air quality as ${air_quality || 'Good'} with ${confidence || 100}% confidence (Pollution Score: ${pollution_score}, Pattern Index: #${pollution_pattern}).`,
+      executiveSummary: `Atmospheric telemetry evaluation for ${loc.name.toUpperCase()} (${loc.state}, India). Deployed ML models on Render backend classified air quality as ${air_quality} with ${confidence ?? 100}% confidence (Pollution Score: ${pollution_score}, Pattern Index: #${pollution_pattern}).`,
       sections: [
         {
-          title: "ML Air Safety Classification",
-          status: (air_quality || 'GOOD').toUpperCase(),
-          keyMetric: `Classification: ${air_quality || 'Good'} (${confidence || 100}% Confidence)`,
-          summary: `Supervised ML classifier confirmed ${air_quality || 'Good'} rating for telemetry payload (PM2.5: ${loc.rawPayload.pm2_5} µg/m³, NO2: ${loc.rawPayload.no2} ppb).`
+          title: "ML Air Quality Classification",
+          status: (air_quality || 'CLASSIFIED').toUpperCase(),
+          keyMetric: `Classification: ${air_quality} (${confidence ?? 100}% Confidence)`,
+          summary: `Supervised ML classifier confirmed ${air_quality} rating for station measurements (PM2.5: ${loc.pm2_5} µg/m³, NO2: ${loc.no2} ppb, RSPM: ${loc.rspm} µg/m³).`
         },
         {
           title: "Pattern Mining & Regression Findings",

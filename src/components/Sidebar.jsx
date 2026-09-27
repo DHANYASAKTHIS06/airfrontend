@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { 
+  Home,
   BarChart3, 
-  Activity, 
-  Cpu, 
-  Network, 
-  Database, 
   GitCompare, 
-  MapPin, 
   Bell, 
-  Star, 
   History, 
   FileText, 
   User, 
-  HelpCircle, 
+  ShieldCheck,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -33,18 +28,14 @@ export default function Sidebar() {
   };
 
   const navItems = [
-    { to: '/dashboard', label: 'Overview', icon: <BarChart3 size={18} /> },
-    { to: '/air-quality', label: 'Air Quality', icon: <Activity size={18} /> },
-    { to: '/prediction', label: 'Prediction', icon: <Cpu size={18} /> },
-    { to: '/pattern-mining', label: 'Pattern Mining', icon: <Network size={18} /> },
-    { to: '/clustering', label: 'Pollution Clusters', icon: <Database size={18} /> },
-    { to: '/compare', label: 'Compare', icon: <GitCompare size={18} /> },
-    { to: '/map', label: 'Spatial Map', icon: <MapPin size={18} /> },
+    { to: '/', label: 'Home', icon: <Home size={18} /> },
+    { to: '/dashboard', label: 'Dashboard', icon: <BarChart3 size={18} /> },
+    { to: '/compare', label: 'Search & Compare', icon: <GitCompare size={18} /> },
     { to: '/notifications', label: 'Notifications', icon: <Bell size={18} />, badge: 2 },
-    { to: '/favorites', label: 'Favorites', icon: <Star size={18} /> },
-    { to: '/history', label: 'History', icon: <History size={18} /> },
-    { to: '/reports', label: 'Reports', icon: <FileText size={18} /> },
-    { to: '/profile', label: 'Profile', icon: <User size={18} /> },
+    { to: '/history', label: 'History & Favorites', icon: <History size={18} /> },
+    { to: '/reports', label: 'Report Generation', icon: <FileText size={18} /> },
+    { to: '/profile', label: 'User Profile', icon: <User size={18} /> },
+    { to: '/admin-support', label: 'Admin & Support', icon: <ShieldCheck size={18} /> },
   ];
 
   return (
@@ -70,7 +61,7 @@ export default function Sidebar() {
 
       {/* Navigation items list */}
       <div className="sidebar-scrollable-nav">
-        <span className="sidebar-category-tag">{!collapsed ? 'PLATFORM INTELLIGENCE' : '•'}</span>
+        <span className="sidebar-category-tag">{!collapsed ? 'SYSTEM MODULES' : '•'}</span>
         <nav className="sidebar-nav-list">
           {navItems.map((item) => (
             <NavLink
@@ -89,34 +80,36 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer Support & Profile */}
+      {/* Footer User Profile & Logout */}
       <div className="sidebar-footer-group">
-        <NavLink
-          to="/help"
-          className={({ isActive }) => `side-nav-link ${isActive ? 'active' : ''}`}
-          title={collapsed ? 'Help & Support' : ''}
-        >
-          <span className="nav-item-icon"><HelpCircle size={18} /></span>
-          {!collapsed && <span className="nav-item-label">Help & Support</span>}
-        </NavLink>
-
-        <button
-          className="side-nav-link btn-sidebar-logout"
-          onClick={handleLogout}
-          title={collapsed ? 'Logout' : ''}
-        >
-          <span className="nav-item-icon"><LogOut size={18} /></span>
-          {!collapsed && <span className="nav-item-label">Logout</span>}
-        </button>
-
-        {!collapsed && user && (
+        {user ? (
           <div className="sidebar-user-pill">
-            <div className="user-avatar-tiny">{user.name ? user.name.charAt(0) : 'A'}</div>
-            <div className="user-pill-text">
-              <span className="user-pill-name">{user.name}</span>
-              <span className="user-pill-email">{user.email}</span>
+            <div className="user-mini-avatar">
+              {user.name?.charAt(0) || 'U'}
             </div>
+            {!collapsed && (
+              <div className="user-mini-info">
+                <span className="user-mini-name">{user.name?.split(' ')[0]}</span>
+                <span className="user-mini-role">{user.role || 'Analyst'}</span>
+              </div>
+            )}
+            <button
+              className="btn-side-logout"
+              onClick={handleLogout}
+              title="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
+        ) : (
+          <NavLink
+            to="/login"
+            className="side-nav-link"
+            title={collapsed ? 'Sign In' : ''}
+          >
+            <span className="nav-item-icon"><User size={18} /></span>
+            {!collapsed && <span className="nav-item-label">Sign In</span>}
+          </NavLink>
         )}
       </div>
     </aside>

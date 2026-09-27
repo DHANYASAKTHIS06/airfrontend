@@ -22,8 +22,8 @@ export const AuthProvider = ({ children }) => {
     throw new Error(res.error || 'Authentication failed');
   };
 
-  const register = async (name, email, password) => {
-    const res = await AuthService.register(name, email, password);
+  const register = async (name, email, password, role) => {
+    const res = await AuthService.register(name, email, password, role);
     if (res.success) {
       setUser(res.user);
       return res.user;
@@ -42,16 +42,22 @@ export const AuthProvider = ({ children }) => {
     return updated;
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    return AuthService.changePassword(currentPassword, newPassword);
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         loading,
         isAuthenticated: !!user,
+        isAdmin: user?.role === 'Administrator',
         login,
         register,
         logout,
-        updateProfile
+        updateProfile,
+        changePassword
       }}
     >
       {children}

@@ -5,38 +5,41 @@ import {
   Building2, 
   ShieldCheck, 
   Sliders, 
-  MapPin, 
+  Lock,
   Save, 
   Check, 
   LogOut,
-  Sparkles
+  AlertCircle
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../context/AuthContext';
-import { useLocationContext } from '../context/LocationContext';
 import './Profile.css';
 
 export default function Profile() {
-  const { user, updateProfile, logout } = useAuth();
-  const { favorites } = useLocationContext();
+  const { user, updateProfile, changePassword, logout } = useAuth();
 
   const [formData, setFormData] = useState({
-    name: user?.name || 'Dr. Alex Mitchell',
-    email: user?.email || 'alex.mitchell@aerodetective.org',
+    name: user?.name || 'Environmental Analyst',
+    email: user?.email || 'analyst@aerodetective.org',
     role: user?.role || 'Environmental Analyst',
     organization: user?.organization || 'Atmospheric Pattern Lab',
     alertThreshold: user?.preferences?.alertThreshold || 150,
     enableRealtimeAlerts: user?.preferences?.enableRealtimeAlerts ?? true,
-    detailedMLMode: user?.preferences?.detailedMLMode ?? true
+    detailedMLMode: user?.preferences?.detailedMLMode ?? true,
+    units: user?.preferences?.units || 'standard'
+  });
+
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmNewPassword: ''
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
-  const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleProfileSubmit = (e) => {
     e.preventDefault();
     updateProfile({
       name: formData.name,
@@ -44,14 +47,40 @@ export default function Profile() {
       role: formData.role,
       organization: formData.organization,
       preferences: {
-        alertThreshold: parseInt(formData.alertThreshold),
+        alertThreshold: parseInt(formData.alertThreshold) || 150,
         enableRealtimeAlerts: formData.enableRealtimeAlerts,
-        detailedMLMode: formData.detailedMLMode
+        detailedMLMode: formData.detailedMLMode,
+        units: formData.units
       }
     });
 
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 2500);
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (!passwordData.newPassword || passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmNewPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      setPasswordSuccess(true);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      setTimeout(() => setPasswordSuccess(false), 2500);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to update password.');
+    }
   };
 
   return (
@@ -84,17 +113,17 @@ export default function Profile() {
         {savedSuccess && (
           <div className="profile-save-alert">
             <Check size={18} />
-            <span>Profile & environmental settings updated successfully.</span>
+            <span>Profile and analytical preferences saved successfully.</span>
           </div>
         )}
 
         {/* Settings Grid */}
-        <form onSubmit={handleSubmit} className="profile-grid-layout">
-          {/* Account Details */}
-          <div className="profile-left-col glass-card">
+        <div className="profile-grid-layout">
+          {/* View / Edit Profile Form */}
+          <form onSubmit={handleProfileSubmit} className="profile-left-col glass-card">
             <div className="card-sub-header">
               <User size={18} className="text-cyan" />
-              <h3 className="sub-title">Analyst Identity</h3>
+              <h3 className="sub-title">User Profile Details</h3>
             </div>
 
             <div className="form-group mb-1">
@@ -103,7 +132,7 @@ export default function Profile() {
                 type="text"
                 className="form-input"
                 value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
               />
             </div>
@@ -114,105 +143,130 @@ export default function Profile() {
                 type="email"
                 className="form-input"
                 value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
+                disabled
+              />
+              <span className="field-hint">Email address is permanently linked to your authentication ID.</span>
+            </div>
+
+            <div className="form-group mb-1">
+              <label className="form-label">Role Designation</label>
+              <input
+                type="text"
+                className="form-input"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group mb-1">
+              <label className="form-label">Organization / Station</label>
+              <input
+                type="text"
+                className="form-input"
+                value={formData.organization}
+                onChange={(e) => setFormData({ ...formData, organization: e.target.value })}
+              />
+            </div>
+
+            <div className="card-sub-header mt-2">
+              <Sliders size={18} className="text-cyan" />
+              <h3 className="sub-title">Profile Settings & Thresholds</h3>
+            </div>
+
+            <div className="form-group mb-1">
+              <label className="form-label">Alert AQI Threshold</label>
+              <input
+                type="number"
+                min="50"
+                max="400"
+                className="form-input"
+                value={formData.alertThreshold}
+                onChange={(e) => setFormData({ ...formData, alertThreshold: e.target.value })}
+              />
+              <span className="field-hint">System will fire warning alerts when AQI exceeds this index.</span>
+            </div>
+
+            <div className="toggle-group-row">
+              <div>
+                <strong className="toggle-title">Real-Time Alert Notifications</strong>
+                <p className="toggle-desc">Receive instant notifications on particulate threshold spikes.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.enableRealtimeAlerts}
+                onChange={(e) => setFormData({ ...formData, enableRealtimeAlerts: e.target.checked })}
+              />
+            </div>
+
+            <button type="submit" className="btn-primary mt-2">
+              <Save size={16} />
+              <span>Save Profile Changes</span>
+            </button>
+          </form>
+
+          {/* Change Password Form */}
+          <form onSubmit={handlePasswordSubmit} className="profile-right-col glass-card">
+            <div className="card-sub-header">
+              <Lock size={18} className="text-cyan" />
+              <h3 className="sub-title">Change Password</h3>
+            </div>
+
+            {passwordError && (
+              <div className="auth-error-alert mb-1">
+                <AlertCircle size={16} />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="profile-save-alert mb-1">
+                <Check size={18} />
+                <span>Password updated successfully.</span>
+              </div>
+            )}
+
+            <div className="form-group mb-1">
+              <label className="form-label">Current Password</label>
+              <input
+                type="password"
+                className="form-input"
+                placeholder="Enter current password"
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                 required
               />
             </div>
 
             <div className="form-group mb-1">
-              <label className="form-label">Specialization Role</label>
+              <label className="form-label">New Password</label>
               <input
-                type="text"
+                type="password"
                 className="form-input"
-                value={formData.role}
-                onChange={(e) => handleChange('role', e.target.value)}
+                placeholder="Minimum 6 characters"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                required
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Organization / Lab</label>
+            <div className="form-group mb-1">
+              <label className="form-label">Confirm New Password</label>
               <input
-                type="text"
+                type="password"
                 className="form-input"
-                value={formData.organization}
-                onChange={(e) => handleChange('organization', e.target.value)}
+                placeholder="Repeat new password"
+                value={passwordData.confirmNewPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmNewPassword: e.target.value })}
+                required
               />
             </div>
-          </div>
 
-          {/* Preferences */}
-          <div className="profile-right-col glass-card">
-            <div className="card-sub-header">
-              <Sliders size={18} className="text-teal" />
-              <h3 className="sub-title">Environmental Mining Preferences</h3>
-            </div>
-
-            <div className="pref-row">
-              <div className="pref-info">
-                <span className="pref-title">AQI Hazard Alert Threshold</span>
-                <p className="pref-desc">Trigger notification alerts when city AQI crosses this level.</p>
-              </div>
-              <div className="threshold-input-wrap">
-                <input
-                  type="number"
-                  min="30"
-                  max="400"
-                  className="threshold-input"
-                  value={formData.alertThreshold}
-                  onChange={(e) => handleChange('alertThreshold', e.target.value)}
-                />
-                <span className="thresh-unit">AQI</span>
-              </div>
-            </div>
-
-            <div className="pref-row">
-              <div className="pref-info">
-                <span className="pref-title">Auto-Expand Advanced ML Mining</span>
-                <p className="pref-desc">Enable deep technical inspection tabs for Random Forest & Apriori by default.</p>
-              </div>
-              <label className="switch-toggle">
-                <input
-                  type="checkbox"
-                  checked={formData.detailedMLMode}
-                  onChange={(e) => handleChange('detailedMLMode', e.target.checked)}
-                />
-                <span className="slider-round"></span>
-              </label>
-            </div>
-
-            <div className="pref-row">
-              <div className="pref-info">
-                <span className="pref-title">Thermal Inversion Notifications</span>
-                <p className="pref-desc">Receive real-time warnings when night-time boundary layer traps particulates.</p>
-              </div>
-              <label className="switch-toggle">
-                <input
-                  type="checkbox"
-                  checked={formData.enableRealtimeAlerts}
-                  onChange={(e) => handleChange('enableRealtimeAlerts', e.target.checked)}
-                />
-                <span className="slider-round"></span>
-              </label>
-            </div>
-
-            <div className="monitored-zones-box">
-              <span className="pref-title mb-sm">Saved Monitoring Hubs ({favorites.length})</span>
-              <div className="saved-chips-flex">
-                {favorites.map((hub, i) => (
-                  <div key={i} className="saved-hub-chip">
-                    <MapPin size={13} className="hub-pin" />
-                    <span>{hub}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button type="submit" className="btn-primary btn-save-profile">
-              <Save size={18} />
-              <span>Save Profile Preferences</span>
+            <button type="submit" className="btn-primary mt-2">
+              <Lock size={16} />
+              <span>Update Password</span>
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </main>
     </div>
   );

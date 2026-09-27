@@ -1,40 +1,53 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, Sparkles, ArrowRight } from 'lucide-react';
+import { Search, MapPin, ArrowRight, AlertTriangle } from 'lucide-react';
+import { findSupportedLocation } from '../data/supportedLocations';
 import './SearchBar.css';
 
-export default function SearchBar({ initialValue = '', onSearch, placeholder = "Enter city, zone, or station (e.g. Coimbatore, Delhi, Bengaluru...)", variant = "hero" }) {
+export default function SearchBar({ initialValue = '', onSearch, placeholder = "Enter supported station (e.g. Coimbatore, Delhi, Bengaluru...)", variant = "hero" }) {
   const [query, setQuery] = useState(initialValue);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const suggestions = [
-    { name: "Coimbatore", badge: "Poor (AQI 156)", color: "#F59E0B" },
-    { name: "Delhi", badge: "Very Poor (AQI 284)", color: "#EF4444" },
-    { name: "Bengaluru", badge: "Moderate (AQI 68)", color: "#14B8A6" },
-    { name: "Shimla", badge: "Good (AQI 28)", color: "#10B981" },
-    { name: "Mumbai", badge: "Poor (AQI 132)", color: "#F59E0B" }
+    { name: "Coimbatore" },
+    { name: "Delhi" },
+    { name: "Bengaluru" },
+    { name: "Shimla" },
+    { name: "Mumbai" },
+    { name: "Chennai" }
   ];
 
   const handleSubmit = (e) => {
     e?.preventDefault();
-    const target = query.trim() || "Coimbatore";
-    if (onSearch) {
-      onSearch(target);
-    } else {
-      navigate(`/analyze/${encodeURIComponent(target)}`);
+    const target = query.trim();
+    if (!target) {
+      setError('Please enter a location name.');
+      return;
     }
-    setShowSuggestions(false);
+
+    const match = findSupportedLocation(target);
+    if (!match) {
+      setError('Location Not Found.');
+      return;
+    }
+
+    setError('');
+    if (onSearch) {
+      onSearch(match.name);
+    } else {
+      navigate(`/air-quality/${encodeURIComponent(match.name)}`);
+    }
   };
 
   const handleSelectSuggestion = (name) => {
     setQuery(name);
+    setError('');
     if (onSearch) {
       onSearch(name);
     } else {
-      navigate(`/analyze/${encodeURIComponent(name)}`);
+      navigate(`/air-quality/${encodeURIComponent(name)}`);
     }
-    setShowSuggestions(false);
   };
 
   return (
@@ -48,8 +61,10 @@ export default function SearchBar({ initialValue = '', onSearch, placeholder = "
             type="text"
             className="searchbar-input"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setShowSuggestions(true)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (error) setError('');
+            }}
             placeholder={placeholder}
             aria-label="Search location"
           />
@@ -57,7 +72,10 @@ export default function SearchBar({ initialValue = '', onSearch, placeholder = "
             <button
               type="button"
               className="clear-search-btn"
-              onClick={() => setQuery('')}
+              onClick={() => {
+                setQuery('');
+                setError('');
+              }}
             >
               ×
             </button>
@@ -65,15 +83,22 @@ export default function SearchBar({ initialValue = '', onSearch, placeholder = "
         </div>
 
         <button type="submit" className="searchbar-submit-btn btn-primary">
-          <span>Analyze Air Quality</span>
+          <span>Analyze Station</span>
           <ArrowRight size={18} />
         </button>
       </form>
 
+      {error && (
+        <div className="searchbar-error-notice">
+          <AlertTriangle size={15} />
+          <span>{error}</span>
+        </div>
+      )}
+
       {/* Suggested Quick Pick pills */}
       <div className="quick-suggestions-bar">
         <span className="quick-label">
-          <Sparkles size={14} /> Popular Queries:
+          Supported Stations:
         </span>
         <div className="quick-chips-list">
           {suggestions.map((item) => (
@@ -84,7 +109,6 @@ export default function SearchBar({ initialValue = '', onSearch, placeholder = "
               onClick={() => handleSelectSuggestion(item.name)}
             >
               <span className="chip-name">{item.name}</span>
-              <span className="chip-indicator" style={{ backgroundColor: item.color }}></span>
             </button>
           ))}
         </div>

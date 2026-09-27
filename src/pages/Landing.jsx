@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Wind, 
@@ -7,49 +7,84 @@ import {
   Cpu, 
   Database, 
   Network, 
-  GitBranch, 
+  GitCompare, 
   Sparkles, 
   ArrowRight, 
   Activity, 
   CheckCircle2, 
   BarChart3, 
-  Layers, 
-  Compass, 
-  Eye,
-  Sliders,
-  ChevronRight,
-  TrendingUp,
+  FileText,
+  Bell,
+  Search,
   MapPin,
-  Search
+  AlertTriangle
 } from 'lucide-react';
 import AnimatedBackground from '../components/AnimatedBackground';
 import { useLocationContext } from '../context/LocationContext';
+import { findSupportedLocation } from '../data/supportedLocations';
 import './Landing.css';
 
 export default function Landing() {
   const [searchInput, setSearchInput] = useState('');
+  const [searchError, setSearchError] = useState('');
   const { selectLocation } = useLocationContext();
   const navigate = useNavigate();
 
   const handleSearch = (e) => {
     e?.preventDefault();
-    const loc = searchInput.trim() || 'Coimbatore';
-    selectLocation(loc);
-    navigate(`/air-quality/${encodeURIComponent(loc)}`);
+    const query = searchInput.trim();
+    if (!query) {
+      setSearchError('Please enter a location name.');
+      return;
+    }
+
+    const match = findSupportedLocation(query);
+    if (!match) {
+      setSearchError('Location Not Found.');
+      return;
+    }
+
+    setSearchError('');
+    selectLocation(match.name);
+    navigate(`/air-quality/${encodeURIComponent(match.name)}`);
   };
 
-  const handleQuickPick = (loc) => {
-    selectLocation(loc);
-    navigate(`/air-quality/${encodeURIComponent(loc)}`);
+  const handleQuickPick = (locName) => {
+    selectLocation(locName);
+    navigate(`/air-quality/${encodeURIComponent(locName)}`);
   };
 
-  const howItWorksSteps = [
-    { num: "01", title: "ENTER LOCATION", desc: "User specifies any city, urban zone, or monitoring station." },
-    { num: "02", title: "FETCH DATA", desc: "Acquires real-time multi-sensor telemetry (PM2.5, NO2, SPM, SO2, weather)." },
-    { num: "03", title: "PROCESS DATA", desc: "Cleans sensor noise and calibrates relative humidity and wind dispersion factors." },
-    { num: "04", title: "AI ANALYSIS", desc: "Random Forest classification & Apriori association pattern mining execution." },
-    { num: "05", title: "SMART INSIGHT", desc: "Identifies primary pollution driver and boundary-layer thermal inversion risks." },
-    { num: "06", title: "RECOMMENDATION", desc: "Generates clear, actionable public health and physical exposure guidelines." }
+  const features = [
+    {
+      icon: <Cpu size={24} className="feature-icon" />,
+      title: "ML Air Quality Classification",
+      desc: "Evaluates atmospheric matrices using the trained Random Forest classifier deployed on Render."
+    },
+    {
+      icon: <Network size={24} className="feature-icon" />,
+      title: "Pattern Mining & Associations",
+      desc: "Identifies recurring pollution patterns and environmental trigger rules from sensory telemetry."
+    },
+    {
+      icon: <Database size={24} className="feature-icon" />,
+      title: "Spatial Clustering & PCA",
+      desc: "Categorizes national monitoring stations into archetypes using principal variance components."
+    },
+    {
+      icon: <GitCompare size={24} className="feature-icon" />,
+      title: "Multi-Zone Comparison",
+      desc: "Side-by-side comparative diagnostics between different regional monitoring stations."
+    },
+    {
+      icon: <Bell size={24} className="feature-icon" />,
+      title: "Automated Alerts & Notifications",
+      desc: "Real-time warning dispatches triggered by particulate thresholds and inversion signatures."
+    },
+    {
+      icon: <FileText size={24} className="feature-icon" />,
+      title: "Executive Report Generation",
+      desc: "Compiles downloadable analytical audit summaries and actionable health recommendations."
+    }
   ];
 
   return (
@@ -68,17 +103,16 @@ export default function Landing() {
           >
             <div className="hero-kicker-pill">
               <span className="pulsing-radar-dot"></span>
-              <span>Next-Gen Environmental Intelligence</span>
+              <span>Air Pollution Pattern Mining & Classification System</span>
             </div>
 
             <h1 className="hero-title-main">
-              See What <br />
-              <span className="gradient-text-teal">the Air Hides.</span>
+              Intelligent Air Quality <br />
+              <span className="gradient-text-teal">Analytics & Insights</span>
             </h1>
 
             <p className="hero-description-main">
-              Intelligent air-quality analysis powered by machine learning, data mining and environmental intelligence.
-              Translating complex sensory matrices into immediate human understanding.
+              A comprehensive atmospheric intelligence system translating multi-sensor telemetry into trained machine learning classifications, spatial clusters, and actionable environmental recommendations.
             </p>
 
             {/* Interactive Location Search Box */}
@@ -88,242 +122,122 @@ export default function Landing() {
                 <input
                   type="text"
                   className="hero-search-input"
-                  placeholder="Where do you want to breathe better? (e.g. Coimbatore, Delhi...)"
+                  placeholder="Search supported monitoring station (e.g. Coimbatore, Delhi, Bengaluru, Mumbai)..."
                   value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    if (searchError) setSearchError('');
+                  }}
                 />
               </div>
               <button type="submit" className="btn-primary hero-analyze-btn">
-                <span>Analyze Air</span>
+                <span>Analyze Station</span>
                 <ArrowRight size={18} />
               </button>
             </form>
 
-            {/* Quick Suggestions */}
+            {searchError && (
+              <div className="hero-search-error-msg">
+                <AlertTriangle size={16} />
+                <span>{searchError}</span>
+              </div>
+            )}
+
+            {/* Quick Location Chips */}
             <div className="hero-quick-chips">
-              <span className="quick-lead"><Sparkles size={14} /> Quick Zones:</span>
-              {['Coimbatore', 'Delhi', 'Bengaluru', 'Shimla', 'Mumbai'].map((city) => (
+              <span className="quick-chip-label">Popular Stations:</span>
+              {['Coimbatore', 'Delhi', 'Bengaluru', 'Mumbai', 'Chennai', 'Shimla'].map((city) => (
                 <button
                   key={city}
                   type="button"
-                  className="quick-chip-btn"
+                  className="quick-pick-chip"
                   onClick={() => handleQuickPick(city)}
                 >
-                  {city}
+                  <MapPin size={13} />
+                  <span>{city}</span>
                 </button>
               ))}
             </div>
-
-            {/* Secondary CTA row */}
-            <div className="hero-cta-links">
-              <button className="btn-secondary" onClick={() => navigate('/dashboard')}>
-                <BarChart3 size={17} />
-                <span>Open Dashboard</span>
-              </button>
-              <a href="#how-it-works" className="link-how-it-works">
-                <span>Explore How It Works</span>
-                <ChevronRight size={16} />
-              </a>
-            </div>
           </motion.div>
 
-          {/* Right Floating Atmospheric Visualization */}
-          <motion.div
-            className="hero-right-visual"
-            initial={{ opacity: 0, scale: 0.9 }}
+          {/* Right Hero Graphic Card */}
+          <motion.div 
+            className="hero-graphic-card glass-card"
+            initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <div className="radar-orbit-core">
-              <div className="orbit-ring ring-1"></div>
-              <div className="orbit-ring ring-2"></div>
-              <div className="orbit-ring ring-3"></div>
-
-              {/* Central AI Sensor Hub */}
-              <div className="orbit-center-node">
-                <Wind size={36} className="center-node-icon" />
-                <span className="node-text">AERO AI</span>
+            <div className="hero-card-header">
+              <div className="live-status-pill">
+                <span className="pulsing-radar-dot"></span>
+                <span>Render Backend ML Online</span>
               </div>
+              <span className="hero-timestamp">Telemetry Grid</span>
+            </div>
 
-              {/* Floating Environmental Mini-Cards */}
-              <motion.div
-                className="floating-mini-card card-pm25"
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <span className="mini-lbl">PM2.5 Sensor</span>
-                <span className="mini-val text-amber">Elevated (68 µg/m³)</span>
-              </motion.div>
+            <div className="hero-preview-body">
+              <div className="hero-stat-box">
+                <span className="stat-label">Model Pipeline</span>
+                <span className="stat-val text-cyan">Random Forest + PCA</span>
+              </div>
+              <div className="hero-stat-box">
+                <span className="stat-label">Supported Network</span>
+                <span className="stat-val text-teal">National Sensors</span>
+              </div>
+              <div className="hero-stat-box">
+                <span className="stat-label">Pattern Extraction</span>
+                <span className="stat-val text-green">Association Mining</span>
+              </div>
+            </div>
 
-              <motion.div
-                className="floating-mini-card card-humidity"
-                animate={{ y: [0, 12, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              >
-                <span className="mini-lbl">Atmospheric Humidity</span>
-                <span className="mini-val text-cyan">64% • Trapping Inversion</span>
-              </motion.div>
-
-              <motion.div
-                className="floating-mini-card card-aqi-result"
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              >
-                <span className="mini-lbl">Classified Status</span>
-                <strong className="mini-val text-amber">POOR (156 AQI)</strong>
-              </motion.div>
+            <div className="hero-card-cta">
+              <Link to="/dashboard" className="btn-primary w-full text-center">
+                <span>Open Analyst Dashboard</span>
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* 2. DATA ABSTRACTION SECTION: FROM COMPLEX DATA TO CLEAR DECISIONS */}
-      <section className="data-abstraction-section">
+      {/* 2. MAIN FEATURES MODULE SECTION */}
+      <section className="landing-features-section">
         <div className="container">
-          <div className="section-title-center">
-            <span className="section-badge-kicker">CORE PHILOSOPHY</span>
-            <h2 className="section-main-heading">
-              From Complex Data <br />
-              <span className="gradient-text">to Clear Decisions.</span>
-            </h2>
-            <p className="section-main-subtext">
-              Raw sensor arrays are cluttered and confusing. AERO-DETECTIVE mines high-dimensional environmental telemetry
-              and delivers simple, actionable human health guidance.
+          <div className="section-header-center">
+            <span className="section-kicker">APPLICATION CAPABILITIES</span>
+            <h2 className="section-title">Core System Modules</h2>
+            <p className="section-desc">
+              Engineered according to the system architecture specification for air quality pattern mining and classification.
             </p>
           </div>
 
-          {/* 3-Stage Abstraction Transformer Visualizer */}
-          <div className="abstraction-transformer-container glass-card">
-            {/* Left: Raw Data Streams */}
-            <div className="ab-side-block raw-data-col">
-              <span className="ab-col-tag">RAW ENVIRONMENTAL DATA</span>
-              <div className="raw-sensor-tags-list">
-                <span className="sensor-tag">PM2.5: 68.4 µg/m³</span>
-                <span className="sensor-tag">RSPM / PM10: 124.2 µg/m³</span>
-                <span className="sensor-tag">NO₂: 38.6 ppb</span>
-                <span className="sensor-tag">SO₂: 12.1 ppb</span>
-                <span className="sensor-tag">Wind: 8.5 km/h WSW</span>
-                <span className="sensor-tag">Relative Humidity: 64%</span>
-                <span className="sensor-tag">Ambient Temp: 29°C</span>
-                <span className="sensor-tag">Thermal Inversion Index</span>
+          <div className="features-grid-3x2">
+            {features.map((feat, i) => (
+              <div key={i} className="feature-card glass-card">
+                <div className="feat-icon-box">{feat.icon}</div>
+                <h3 className="feat-title">{feat.title}</h3>
+                <p className="feat-desc">{feat.desc}</p>
               </div>
-            </div>
-
-            {/* Center: AERO AI Core Engine */}
-            <div className="ab-center-engine">
-              <div className="engine-pulse-frame">
-                <Cpu size={32} className="engine-pulse-icon" />
-                <div className="pulse-wave-ring"></div>
-              </div>
-              <span className="engine-name-lbl">AERO-DETECTIVE AI</span>
-              <span className="engine-sub-lbl">Random Forest + Apriori + K-Means</span>
-            </div>
-
-            {/* Right: Clean Abstracted Output */}
-            <div className="ab-side-block clean-insight-col">
-              <span className="ab-col-tag text-cyan">CLEAR HUMAN INSIGHT</span>
-              <div className="clean-insight-card">
-                <div className="ci-row">
-                  <span className="ci-lbl">AIR QUALITY</span>
-                  <span className="ci-badge badge-poor">POOR</span>
-                </div>
-                <div className="ci-row">
-                  <span className="ci-lbl">MAIN CONCERN</span>
-                  <strong className="ci-val">Particulate Pollution</strong>
-                </div>
-                <div className="ci-row">
-                  <span className="ci-lbl">RECOMMENDATION</span>
-                  <p className="ci-rec-text">Reduce prolonged outdoor exposure and avoid evening strenuous exertion.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. HOW IT WORKS PROGRESSION */}
-      <section id="how-it-works" className="how-it-works-section">
-        <div className="container">
-          <div className="section-title-center">
-            <span className="section-badge-kicker">WORKFLOW PIPELINE</span>
-            <h2 className="section-main-heading">How AERO-DETECTIVE Works</h2>
-            <p className="section-main-subtext">A 6-step intelligent data mining and classification pipeline.</p>
-          </div>
-
-          <div className="how-steps-grid">
-            {howItWorksSteps.map((step, idx) => (
-              <motion.div
-                key={step.num}
-                className="step-tile-card glass-card"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-              >
-                <span className="step-big-num">{step.num}</span>
-                <h3 className="step-tile-title">{step.title}</h3>
-                <p className="step-tile-desc">{step.desc}</p>
-              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 4. INTEGRATED ML ENGINES */}
-      <section className="ml-engines-section">
-        <div className="container">
-          <div className="section-title-center">
-            <span className="section-badge-kicker">UNDER THE HOOD</span>
-            <h2 className="section-main-heading">4 Integrated Machine Learning Architectures</h2>
+      {/* 3. QUICK NAVIGATION CTA */}
+      <section className="landing-cta-strip">
+        <div className="container cta-flex-box glass-card">
+          <div>
+            <h3 className="cta-headline">Ready to Explore Atmospheric Patterns?</h3>
+            <p className="cta-sub">Query real station data and machine learning predictions across monitored locations.</p>
           </div>
-
-          <div className="engines-quad-grid">
-            <div className="engine-quad-card glass-card">
-              <Cpu size={26} className="text-cyan mb-sm" />
-              <h3 className="quad-title">Random Forest</h3>
-              <span className="quad-sub">Air Quality Classification</span>
-              <p className="quad-desc">Ensemble multi-tree voting preventing baseline noise from skewing air hazard thresholds.</p>
-            </div>
-
-            <div className="engine-quad-card glass-card">
-              <Database size={26} className="text-teal mb-sm" />
-              <h3 className="quad-title">K-Means</h3>
-              <span className="quad-sub">Spatial Pollution Grouping</span>
-              <p className="quad-desc">Unsupervised clustering grouping geographic sensor stations into clean, moderate, and high-pollution zones.</p>
-            </div>
-
-            <div className="engine-quad-card glass-card">
-              <Network size={26} className="text-green mb-sm" />
-              <h3 className="quad-title">Apriori Miner</h3>
-              <span className="quad-sub">Pollution Pattern Mining</span>
-              <p className="quad-desc">Mines association rules connecting meteorological conditions with sudden pollutant spikes.</p>
-            </div>
-
-            <div className="engine-quad-card glass-card">
-              <GitBranch size={26} className="text-blue mb-sm" />
-              <h3 className="quad-title">PCA</h3>
-              <span className="quad-sub">Feature Reduction</span>
-              <p className="quad-desc">Reduces 12 multi-dimensional chemical sensor parameters into clear 2D principal variance axes.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 5. FINAL CTA BANNER */}
-      <section className="landing-cta-banner">
-        <div className="container">
-          <div className="cta-banner-box glass-card">
-            <h2 className="cta-h2">Experience Environmental Clarity Today</h2>
-            <p className="cta-sub">Query your location or explore the full analytical dashboard.</p>
-            <div className="cta-btns">
-              <button className="btn-primary" onClick={() => handleQuickPick('Coimbatore')}>
-                <span>Analyze Coimbatore Sample</span>
-                <ArrowRight size={18} />
-              </button>
-              <button className="btn-secondary" onClick={() => navigate('/dashboard')}>
-                <span>Open Dashboard Workspace</span>
-              </button>
-            </div>
+          <div className="cta-action-buttons">
+            <Link to="/dashboard" className="btn-primary">
+              <span>Go to Dashboard</span>
+              <ArrowRight size={18} />
+            </Link>
+            <Link to="/compare" className="btn-secondary">
+              <span>Compare Stations</span>
+            </Link>
           </div>
         </div>
       </section>
