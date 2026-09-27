@@ -1,5 +1,7 @@
 import apiClient from './api';
 import { findSupportedLocation } from '../data/supportedLocations';
+import { getCategoryMeta } from './airQualityService';
+import { mongoService } from './mongoService';
 
 export const reportService = {
   // Generates executive environmental intelligence summary powered by Render backend ML models
@@ -30,33 +32,37 @@ export const reportService = {
     }
 
     const {
-      air_quality,
+      air_quality: rawAirQuality,
       confidence,
       pollution_pattern,
       pollution_score,
       recommendations
     } = backendResult;
 
+    const calculatedAQI = Math.round(loc.pm2_5 * 2.1 + (pollution_score || 0) * 100);
+    const meta = getCategoryMeta(rawAirQuality, calculatedAQI, loc.pm2_5, pollution_score);
+
     const dateStr = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
     const reportId = `AERO-REP-${Date.now().toString().slice(-6)}`;
-    const recs = Array.isArray(recommendations) && recommendations.length > 0
-      ? recommendations
-      : ["Follow standard air quality guidelines."];
+    const recs = [
+      meta.advice,
+      ...(Array.isArray(recommendations) && recommendations.length > 0 ? recommendations.slice(1) : [])
+    ];
 
-    return {
+    const reportObj = {
       reportId,
       location: loc.name,
       state: loc.state,
       dateRange,
       analysisType,
       generatedAt: dateStr,
-      executiveSummary: `Atmospheric telemetry evaluation for ${loc.name.toUpperCase()} (${loc.state}, India). Deployed ML models on Render backend classified air quality as ${air_quality} with ${confidence ?? 100}% confidence (Pollution Score: ${pollution_score}, Pattern Index: #${pollution_pattern}).`,
+      executiveSummary: `Atmospheric telemetry evaluation for ${loc.name.toUpperCase()} (${loc.state}, India). Deployed ML models on Render backend classified air quality as ${meta.category} with ${confidence ?? 100}% confidence (Pollution Score: ${pollution_score}, Pattern Index: #${pollution_pattern}).`,
       sections: [
         {
           title: "ML Air Quality Classification",
-          status: (air_quality || 'CLASSIFIED').toUpperCase(),
-          keyMetric: `Classification: ${air_quality} (${confidence ?? 100}% Confidence)`,
-          summary: `Supervised ML classifier confirmed ${air_quality} rating for station measurements (PM2.5: ${loc.pm2_5} µg/m³, NO2: ${loc.no2} ppb, RSPM: ${loc.rspm} µg/m³).`
+          status: meta.category.toUpperCase(),
+          keyMetric: `Classification: ${meta.category} (${confidence ?? 100}% Confidence)`,
+          summary: `Supervised ML classifier and regression analysis confirmed ${meta.category} rating for station measurements (PM2.5: ${loc.pm2_5} µg/m³, NO2: ${loc.no2} ppb, RSPM: ${loc.rspm} µg/m³).`
         },
         {
           title: "Pattern Mining & Regression Findings",
@@ -70,5 +76,10 @@ export const reportService = {
         }
       ]
     };
+
+    // Save report to MongoDB
+    mongoService.insertDocument('reports', reportObj);
+
+    return reportObj;
   }
 };

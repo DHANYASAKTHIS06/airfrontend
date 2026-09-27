@@ -5,7 +5,7 @@ import { getCategoryMeta } from './airQualityService';
 export const clusteringService = {
   // Queries Render backend ML endpoints for supported network locations
   getClustersData: async () => {
-    const targetLocations = ['coimbatore', 'delhi', 'bengaluru', 'mumbai', 'chennai', 'shimla', 'jaipur', 'kolkata'];
+    const targetLocations = ['shimla', 'kochi', 'coimbatore', 'bengaluru', 'chennai', 'mumbai', 'jaipur', 'delhi', 'kanpur'];
     const locations = targetLocations.map(k => SUPPORTED_LOCATIONS[k]).filter(Boolean);
 
     const results = await Promise.all(
@@ -19,15 +19,18 @@ export const clusteringService = {
             pm2_5: loc.pm2_5
           };
           const res = await apiClient.post('/predict', payload);
+          const calculatedAQI = Math.round(loc.pm2_5 * 2.1 + (res.pollution_score || 0) * 100);
+          const meta = getCategoryMeta(res.air_quality, calculatedAQI, loc.pm2_5, res.pollution_score);
+
           return {
             name: loc.name,
             pc1: res.feature_extraction?.PC1 ?? 0,
             pc2: res.feature_extraction?.PC2 ?? 0,
             pattern: res.pollution_pattern ?? 0,
             score: res.pollution_score ?? 0,
-            category: res.air_quality || "Unknown",
-            categoryColor: getCategoryMeta(res.air_quality).categoryColor,
-            recommendation: res.recommendations?.[0] || "Air quality processed."
+            category: meta.category,
+            categoryColor: meta.categoryColor,
+            recommendation: meta.advice
           };
         } catch (e) {
           console.error(`Error querying backend for ${loc.name}:`, e);
@@ -41,9 +44,9 @@ export const clusteringService = {
       throw new Error('Unable to fetch data');
     }
 
-    const lowRiskLocations = validResults.filter(r => r.pc1 < 0).map(r => r.name);
-    const moderateLocations = validResults.filter(r => r.pc1 >= 0 && r.pc1 < 5).map(r => r.name);
-    const highRiskLocations = validResults.filter(r => r.pc1 >= 5).map(r => r.name);
+    const lowRiskLocations = validResults.filter(r => r.category === 'Good').map(r => r.name);
+    const moderateLocations = validResults.filter(r => r.category === 'Moderate').map(r => r.name);
+    const highRiskLocations = validResults.filter(r => r.category === 'Poor' || r.category === 'Very Poor').map(r => r.name);
 
     return {
       k: 3,
@@ -55,7 +58,7 @@ export const clusteringService = {
           label: "LOW POLLUTION CLUSTER",
           color: "#10B981",
           characteristics: "Locations with negative PC1 coordinates characterized by low particulate concentrations.",
-          sampleLocations: lowRiskLocations.length > 0 ? lowRiskLocations : ["Shimla", "Bengaluru"],
+          sampleLocations: lowRiskLocations.length > 0 ? lowRiskLocations : ["Shimla", "Kochi"],
           recommendation: "Safe conditions for outdoor activities."
         },
         {
@@ -64,7 +67,7 @@ export const clusteringService = {
           label: "MODERATE POLLUTION CLUSTER",
           color: "#14B8A6",
           characteristics: "Urban centers exhibiting moderate traffic-related particulate concentrations.",
-          sampleLocations: moderateLocations.length > 0 ? moderateLocations : ["Chennai", "Coimbatore", "Mumbai"],
+          sampleLocations: moderateLocations.length > 0 ? moderateLocations : ["Chennai", "Coimbatore", "Bengaluru"],
           recommendation: "Safe for general activities with standard urban awareness."
         },
         {
@@ -73,7 +76,7 @@ export const clusteringService = {
           label: "HIGH POLLUTION CLUSTER",
           color: "#EF4444",
           characteristics: "Stations with high positive PC1 values and significant particulate loading.",
-          sampleLocations: highRiskLocations.length > 0 ? highRiskLocations : ["Delhi"],
+          sampleLocations: highRiskLocations.length > 0 ? highRiskLocations : ["Delhi", "Kanpur", "Jaipur", "Mumbai"],
           recommendation: "Elevated particulate concentration. Sensitive groups limit prolonged outdoor exposure."
         }
       ],
@@ -81,7 +84,7 @@ export const clusteringService = {
         name: r.name,
         x: parseFloat(r.pc1.toFixed(2)),
         y: parseFloat(r.pc2.toFixed(2)),
-        clusterId: r.pc1 < 0 ? 1 : r.pc1 >= 5 ? 3 : 2,
+        clusterId: r.category === 'Good' ? 1 : (r.category === 'Poor' || r.category === 'Very Poor') ? 3 : 2,
         category: r.category
       }))
     };

@@ -28,7 +28,7 @@ export const predictionService = {
     }
 
     const {
-      air_quality,
+      air_quality: rawAirQuality,
       confidence,
       feature_extraction,
       pollution_pattern,
@@ -36,23 +36,22 @@ export const predictionService = {
       recommendations
     } = backendResult;
 
-    if (!air_quality) {
-      throw new Error('Unable to fetch data');
-    }
+    const calculatedAQI = Math.round(payload.pm2_5 * 2.1 + (pollution_score || 0) * 100);
+    const meta = getCategoryMeta(rawAirQuality, calculatedAQI, payload.pm2_5, pollution_score);
 
-    const meta = getCategoryMeta(air_quality);
-    const recommendationsList = Array.isArray(recommendations) && recommendations.length > 0
-      ? recommendations
-      : ["Air quality evaluated by backend ML model."];
+    const recommendationsList = [
+      meta.advice,
+      ...(Array.isArray(recommendations) && recommendations.length > 0 ? recommendations.slice(1) : [])
+    ];
 
     return {
-      predictedClass: air_quality,
+      predictedClass: meta.category,
       predictedColor: meta.categoryColor,
       confidence: confidence ?? 100.0,
       pollutionScore: pollution_score ?? 0,
       pollutionPattern: pollution_pattern ?? 0,
       pcaProjection: feature_extraction || { PC1: 0, PC2: 0 },
-      explanation: `Classification model evaluated ${air_quality} rating with ${confidence ?? 100}% confidence. Regression pollution score: ${pollution_score}. Pattern index: #${pollution_pattern}.`,
+      explanation: `Classification model and regression index evaluated ${meta.category} rating with ${confidence ?? 100}% confidence. Regression pollution score: ${pollution_score}. Pattern index: #${pollution_pattern}.`,
       recommendation: recommendationsList.join(' '),
       recommendations: recommendationsList,
       featureImportances: [

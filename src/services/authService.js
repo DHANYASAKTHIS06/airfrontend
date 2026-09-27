@@ -1,4 +1,6 @@
-// Authentication & User State Service
+import { mongoService } from './mongoService';
+
+// Authentication & User State Service with MongoDB Sync
 
 const AUTH_USER_KEY = "aero_detective_user";
 const REGISTERED_USERS_KEY = "aero_registered_users";
@@ -79,7 +81,7 @@ export const AuthService = {
       return { success: true, user: safeUser };
     }
 
-    // Allow user login with clean fallback account creation if not yet registered
+    // Allow user login with clean account creation if not yet registered
     const newUser = {
       id: `u_${Date.now()}`,
       name: email.split("@")[0].replace(".", " ").replace(/\b\w/g, l => l.toUpperCase()),
@@ -99,6 +101,7 @@ export const AuthService = {
     users.push({ ...newUser, password });
     localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(newUser));
+    mongoService.insertDocument('users', newUser);
     return { success: true, user: newUser };
   },
 
@@ -130,6 +133,7 @@ export const AuthService = {
     users.push({ ...newUser, password });
     localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(newUser));
+    mongoService.insertDocument('users', newUser);
     return { success: true, user: newUser };
   },
 
@@ -143,6 +147,7 @@ export const AuthService = {
     // Update in users registry
     const users = getStoredUsers().map(u => u.email === current.email ? { ...u, ...updatedData } : u);
     localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    mongoService.updateDocument('users', { email: current.email }, updatedData);
     return updated;
   },
 
@@ -160,6 +165,7 @@ export const AuthService = {
 
     users[userIndex].password = newPassword;
     localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    mongoService.updateDocument('users', { email: current.email }, { password: newPassword });
     return { success: true };
   },
 
